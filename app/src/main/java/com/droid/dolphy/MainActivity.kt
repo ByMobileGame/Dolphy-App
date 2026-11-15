@@ -651,6 +651,11 @@ fun MainScaffold(
                     accentColor = accent
                 )
             }
+            composable("other/force_reconnect") {
+                com.droid.dolphy.bluetooth.forcereconnect.ForceReconnectScreen(
+                    onBack = { screenNavController.popBackStack() }
+                )
+            }
             composable("ble_spam_screen") {
                 BleSpamFullScreen(
                     viewModel = spamViewModel,
