@@ -168,6 +168,8 @@
             android:exported="false"
             android:launchMode="singleTop"
             android:label="HID Keyboard"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:theme="@style/Theme.Dolphy" />
 
         <service

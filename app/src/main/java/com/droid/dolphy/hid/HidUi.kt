@@ -113,19 +113,29 @@ import kotlin.random.Random
 import com.droid.dolphy.R
 import org.json.JSONArray
 import org.json.JSONObject
+private enum class ComboMode { KEYBOARD, TOUCHPAD, SPLIT }
+
 @Composable
 fun Combo(
     hidConnection: Connection?,
     capsLock: Boolean,
 ) {
-    var mode by remember { mutableStateOf("keyboard") }
+    var mode by remember { mutableStateOf(ComboMode.KEYBOARD) }
 
     val togglePlum: @Composable (Modifier) -> Unit = { modifier ->
         Plum(
             onUp = {
-                mode = if (mode == "keyboard") "touchpad" else "keyboard"
+                mode = when (mode) {
+                    ComboMode.KEYBOARD -> ComboMode.TOUCHPAD
+                    ComboMode.TOUCHPAD -> ComboMode.SPLIT
+                    ComboMode.SPLIT -> ComboMode.KEYBOARD
+                }
             },
-            label = if (mode == "keyboard") "TP" else "KB",
+            label = when (mode) {
+                ComboMode.KEYBOARD -> "TP"
+                ComboMode.TOUCHPAD -> "BOTH"
+                ComboMode.SPLIT -> "KB"
+            },
             imageAlt = "Change Mode",
             modifier = modifier,
         )
@@ -140,10 +150,32 @@ fun Combo(
         )
     }
 
-    if (mode == "keyboard") {
-        Keyboard(hidConnection, togglePlum, settingsPlum, capsLock)
-    } else {
-        Touchpad(hidConnection, togglePlum, settingsPlum)
+    when (mode) {
+        ComboMode.KEYBOARD -> Keyboard(
+            hidConnection,
+            togglePlum,
+            settingsPlum,
+            capsLock,
+            modifier = Modifier.fillMaxSize(),
+        )
+        ComboMode.TOUCHPAD -> Touchpad(hidConnection, togglePlum, settingsPlum)
+        ComboMode.SPLIT -> Row(modifier = Modifier.fillMaxSize()) {
+            Keyboard(
+                hidConnection,
+                togglePlum,
+                settingsPlum,
+                capsLock,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize(),
+            )
+            Touchpad(
+                hidConnection,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -1198,9 +1230,10 @@ fun Touchpad(
     togglePlum: @Composable (Modifier) -> Unit = {},
     settingsPlum: @Composable (Modifier) -> Unit = {},
     sensitivityMove: Float = 1.5f,
-    sensitivityScroll: Float = 0.4f
+    sensitivityScroll: Float = 0.4f,
+    modifier: Modifier = Modifier.fillMaxSize(),
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = modifier) {
         Axon(
             modifier = Modifier
                 .fillMaxSize()

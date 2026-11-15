@@ -11,19 +11,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeight
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -84,8 +81,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -315,7 +310,12 @@ fun PcHidWorkspaceScreen(
                         sensitivityMove = sensitivityMove,
                         sensitivityScroll = sensitivityScroll
                     )
-                    PcSection.Keyboard -> PcKeyboardSection(hidConnection, capsLock)
+                    PcSection.Keyboard -> PcKeyboardSection(
+                        hidConnection = hidConnection,
+                        capsLock = capsLock,
+                        sensitivityMove = sensitivityMove,
+                        sensitivityScroll = sensitivityScroll
+                    )
                     PcSection.Controls -> PcConsumerControlsSection(hidConnection)
                     PcSection.BadHid -> BadHidSection(
                         scripts = scripts,
@@ -745,39 +745,81 @@ private fun PcIconControlButton(
 }
 
 @SuppressLint("MissingPermission")
+private enum class PcKeyboardMode { KEYBOARD, TOUCHPAD, SPLIT }
+
 @Composable
-private fun PcKeyboardSection(hidConnection: Connection, capsLock: Boolean) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val keyboardLong = maxHeight
-            val keyboardShort = maxWidth
-            val scale = keyboardLong / 855.dp
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
+private fun PcKeyboardSection(
+    hidConnection: Connection,
+    capsLock: Boolean,
+    sensitivityMove: Float = 1.5f,
+    sensitivityScroll: Float = 0.4f,
+) {
+    var mode by remember { mutableStateOf(PcKeyboardMode.KEYBOARD) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            com.droid.dolphy.AccentButton(
+                onClick = {
+                    mode = when (mode) {
+                        PcKeyboardMode.KEYBOARD -> PcKeyboardMode.TOUCHPAD
+                        PcKeyboardMode.TOUCHPAD -> PcKeyboardMode.SPLIT
+                        PcKeyboardMode.SPLIT -> PcKeyboardMode.KEYBOARD
+                    }
+                }
             ) {
-                Column(
+                Text(
+                    when (mode) {
+                        PcKeyboardMode.KEYBOARD -> stringResource(R.string.hid_touchpad)
+                        PcKeyboardMode.TOUCHPAD -> "Split"
+                        PcKeyboardMode.SPLIT -> stringResource(R.string.hid_pc_keyboard)
+                    }
+                )
+            }
+        }
+
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            when (mode) {
+                PcKeyboardMode.KEYBOARD -> Keyboard(
+                    hidConnection = hidConnection,
+                    togglePlum = { },
+                    settingsPlum = { },
+                    capsLock = capsLock,
                     modifier = Modifier
-                        .requiredWidth(keyboardLong)
-                        .requiredHeight(keyboardShort)
-                        .graphicsLayer {
-                            rotationZ = 90f
-                            transformOrigin = TransformOrigin.Center
-                            clip = false
-                        }
-                ) {
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                )
+                PcKeyboardMode.TOUCHPAD -> PcMouseSection(
+                    hidConnection = hidConnection,
+                    sensitivityMove = sensitivityMove,
+                    sensitivityScroll = sensitivityScroll
+                )
+                PcKeyboardMode.SPLIT -> Row(modifier = Modifier.fillMaxSize()) {
                     Keyboard(
                         hidConnection = hidConnection,
                         togglePlum = { },
                         settingsPlum = { },
                         capsLock = capsLock,
-                        scale = scale,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
+                            .weight(1f)
+                            .fillMaxHeight()
                             .verticalScroll(rememberScrollState())
                     )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    ) {
+                        PcMouseSection(
+                            hidConnection = hidConnection,
+                            sensitivityMove = sensitivityMove,
+                            sensitivityScroll = sensitivityScroll
+                        )
+                    }
                 }
             }
         }
