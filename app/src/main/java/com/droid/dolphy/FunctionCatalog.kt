@@ -99,6 +99,7 @@ fun functionDestinationSections(): List<Pair<String, List<FunctionDestination>>>
             FunctionDestination(Icons.Default.Chat, "Dolphy Chat", chatDesc, "other/dolphy_chat_global", OtherSections.BLUETOOTH),
             FunctionDestination(Icons.Default.Keyboard, hidTitle, hidDesc, "hid", OtherSections.BLUETOOTH),
             FunctionDestination(Icons.Default.BluetoothDisabled, "Bluetooth Jammer", "L2CAP flood attack", "other/bluetooth_jammer", OtherSections.BLUETOOTH),
+            FunctionDestination(Icons.Default.BluetoothConnected, "Force Reconnect", "Fix a paired TWS earbud that shows connected but plays no audio", "other/force_reconnect", OtherSections.BLUETOOTH),
         ) + plugins(OtherSections.BLUETOOTH))
         sections += OtherSections.OTHER to listOf(
             FunctionDestination(Icons.Outlined.Nfc, nfcTitle, nfcDesc, "other/nfc_tools", OtherSections.OTHER),
